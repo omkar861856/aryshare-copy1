@@ -10,8 +10,8 @@ Create a `.env.local` file in your project root:
 
 ```bash
 # Ayrshare Business SSO Configuration
-AYR_API_KEY=7FA008E8-5E8F47C9-978AF1AF-B2F965B1
-AYR_DOMAIN=id-8ig3h
+AYR_API_KEY=
+AYR_DOMAIN=
 AYR_PRIVATE_KEY_B64=YOUR_BASE64_PRIVATE_KEY_HERE
 ```
 
@@ -135,7 +135,7 @@ curl -X POST https://api.ayrshare.com/api/profiles/generateJWT \
   -H "Authorization: Bearer $AYR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "domain": "id-8ig3h",
+    "domain": "",
     "privateKey": "'$AYR_PRIVATE_KEY_B64'",
     "base64": true,
     "profileKey": "'$PROFILE_KEY'"
@@ -171,7 +171,7 @@ For real-time updates on social account changes and scheduled posts:
 ```tsx
 // Customize SSO behavior
 {
-  domain: "id-8ig3h",
+  domain: "",
   privateKey: process.env.AYR_PRIVATE_KEY_B64,
   base64: true,
   profileKey,
