@@ -137,7 +137,7 @@ export function ProfileOverview({
           <div className="flex items-center gap-2">
             <UserCircle className="h-5 w-5" />
             <div>
-              <CardTitle>{profile.title || "User Profile"}</CardTitle>
+              <CardTitle>{profile?.title || "User Profile"}</CardTitle>
               <CardDescription>
                 {profileMetadata.isActive
                   ? "Active Profile"

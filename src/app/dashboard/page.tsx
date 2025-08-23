@@ -608,7 +608,7 @@ function PostsContent() {
   );
 }
 
-export function SocialMediaDashboard() {
+export default function DashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   return (
@@ -680,8 +680,4 @@ export function SocialMediaDashboard() {
       </main>
     </div>
   );
-}
-
-export default function DashboardPage() {
-  return <SocialMediaDashboard />;
 }

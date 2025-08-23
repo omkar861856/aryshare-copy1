@@ -1,7 +1,7 @@
 "use client";
 
 import { UserProfileDetails } from "@/lib/ayrshare-api";
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useCurrentUser } from "./use-current-user";
 
 interface UseAyrshareUserReturn {
