@@ -34,7 +34,7 @@ export function SSOButton({
   size = "default",
   showDetails = false,
 }: SSOButtonProps) {
-  const { profile, profileId } = useProfile();
+  const { profileId } = useProfile();
   const [isGenerating, setIsGenerating] = useState(false);
   const [ssoData, setSsoData] = useState<{
     url: string;

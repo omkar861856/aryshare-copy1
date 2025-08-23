@@ -12,7 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+// import { usePathname } from "next/navigation";
 
 interface ProfileNavigationProps {
   currentPage?: string;
@@ -25,7 +25,7 @@ export function ProfileNavigation({
   showBreadcrumbs = true,
   showQuickActions = true,
 }: ProfileNavigationProps) {
-  const pathname = usePathname();
+  // const pathname = usePathname();
 
   const navigationItems = [
     {

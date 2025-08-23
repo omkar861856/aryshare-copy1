@@ -13,7 +13,7 @@ import { useState } from "react";
 
 export function DebugUserProfile() {
   const { currentUser, isLoaded, isSignedIn } = useCurrentUser();
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(false);
 
   const testAPI = async () => {

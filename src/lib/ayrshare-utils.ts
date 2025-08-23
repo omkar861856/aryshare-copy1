@@ -254,7 +254,7 @@ export async function testRandomPost(
  */
 export async function fetchUserProfileDetails(
   instagramDetails: boolean = false
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   const params = new URLSearchParams();
   if (instagramDetails) {
     params.append("instagramDetails", "true");

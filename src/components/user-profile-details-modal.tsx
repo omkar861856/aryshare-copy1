@@ -26,7 +26,7 @@ import {
   Users,
   Verified,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 interface UserProfileDetailsModalProps {
   isOpen: boolean;
@@ -107,7 +107,7 @@ export function UserProfileDetailsModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUserDetails = async () => {
+  const fetchUserDetails = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -117,7 +117,7 @@ export function UserProfileDetailsModal({
         instagramDetails: true,
       });
       setUserDetails(details);
-    } catch (err) {
+    } catch {
       // If we can't get detailed user info, create a basic profile object
       // with the information we already have from the profiles list
       const basicProfile: UserProfileDetails = {
@@ -141,13 +141,13 @@ export function UserProfileDetailsModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [profileRefId, profileTitle]);
 
   useEffect(() => {
     if (isOpen && profileRefId) {
       fetchUserDetails();
     }
-  }, [isOpen, profileRefId]);
+  }, [isOpen, profileRefId, fetchUserDetails]);
 
   const handleClose = () => {
     setUserDetails(null);

@@ -1,10 +1,10 @@
 import { clerkClient, currentUser } from "@clerk/nextjs/server";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 const AYR_API_KEY = process.env.AYR_API_KEY;
 const AYR_API_URL = "https://api.ayrshare.com/api";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     console.log("🚀 Creating new Ayrshare user profile...");
 

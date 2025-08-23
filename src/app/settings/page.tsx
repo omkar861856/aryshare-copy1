@@ -175,7 +175,7 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-gray-600">
-              We're working on additional settings including:
+              We&apos;re working on additional settings including:
             </p>
             <ul className="mt-4 space-y-2 text-sm text-gray-600">
               <li>• Custom branding and themes</li>

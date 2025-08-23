@@ -214,7 +214,7 @@ export class AyrshareAPI {
         if (errorData.code) {
           errorMessage += ` (Code: ${errorData.code})`;
         }
-      } catch (e) {
+      } catch {
         console.log("⚠️ Could not parse error response");
         // If we can't parse the error response, use the basic message
       }
@@ -331,7 +331,7 @@ dWAdtzGbcpv7NIuaVnwCHvxOYKEfnffMbjaUHiPaK1bhRW16vC8Pyo89QvFJCEaI
         } else if (errorData.message) {
           errorMessage += ` - ${errorData.message}`;
         }
-      } catch (e) {
+      } catch {
         console.log("⚠️ Could not parse SSO error response");
       }
 

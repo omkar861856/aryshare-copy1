@@ -11,7 +11,7 @@ import { usePathname } from "next/navigation";
 export function TopNavigation() {
   const { user, isSignedIn, isLoaded } = useUser();
   const pathname = usePathname();
-  const { profileId, hasProfile } = useProfile();
+  const { hasProfile } = useProfile();
 
   const navigation = [
     {

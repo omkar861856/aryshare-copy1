@@ -682,6 +682,6 @@ export function SocialMediaDashboard() {
   );
 }
 
-export default function DashboardDemo() {
+export default function DashboardPage() {
   return <SocialMediaDashboard />;
 }

@@ -91,7 +91,7 @@ export default function AnalyticsPage() {
         </CardHeader>
         <CardContent>
           <p className="text-gray-600">
-            We're working on comprehensive analytics including:
+            We&apos;re working on comprehensive analytics including:
           </p>
           <ul className="mt-4 space-y-2 text-sm text-gray-600">
             <li>• Post performance tracking across all platforms</li>

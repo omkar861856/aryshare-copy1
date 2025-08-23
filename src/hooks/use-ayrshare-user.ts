@@ -1,7 +1,7 @@
 "use client";
 
 import { UserProfileDetails } from "@/lib/ayrshare-api";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useCurrentUser } from "./use-current-user";
 
 interface UseAyrshareUserReturn {
@@ -21,7 +21,7 @@ export function useAyrshareUser(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUserDetails = async () => {
+  const fetchUserDetails = useCallback(async () => {
     console.log("🔍 useAyrshareUser: Starting fetch...");
     console.log("👤 Current user:", currentUser);
     console.log("🔑 User metadata:", currentUser?.metadata);
@@ -81,7 +81,7 @@ export function useAyrshareUser(
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, instagramDetails]);
 
   useEffect(() => {
     if (isLoaded && isSignedIn && currentUser?.metadata?.["Profile-Key"]) {
@@ -93,8 +93,9 @@ export function useAyrshareUser(
   }, [
     isLoaded,
     isSignedIn,
-    currentUser?.metadata?.["Profile-Key"],
+    currentUser?.metadata,
     instagramDetails,
+    fetchUserDetails,
   ]);
 
   return {

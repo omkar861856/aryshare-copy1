@@ -74,7 +74,7 @@ export function ProfileSettings({ showActions = true }: ProfileSettingsProps) {
     );
   }
 
-  const updateSetting = (category: string, key: string, value: any) => {
+  const updateSetting = (category: string, key: string, value: string | boolean | number) => {
     setSettings((prev) => ({
       ...prev,
       [category]: {

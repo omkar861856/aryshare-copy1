@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  AyrshareUserProfile,
   generateSSOUrl,
   testRandomPost,
 } from "@/lib/ayrshare-utils";
@@ -33,7 +32,7 @@ export function ConnectSocialsButton({
 }: ConnectSocialsButtonProps) {
   const { user, isLoaded } = useUser();
   const [isLoading, setIsLoading] = useState(false);
-  const [profile, setProfile] = useState<AyrshareUserProfile | null>(null);
+  // const [profile, setProfile] = useState<AyrshareUserProfile | null>(null);
   const [testResult, setTestResult] = useState<string | null>(null);
   const [localProfileKey, setLocalProfileKey] = useState<string | null>(null);
 
@@ -169,7 +168,7 @@ export function ConnectSocialsButton({
 
       // Update local state
       setLocalProfileKey(newProfileKey);
-      setProfile({ key: newProfileKey, title: data.title, email: userEmail });
+      // setProfile({ key: newProfileKey, title: data.title, email: userEmail });
       onProfileCreated?.(newProfileKey);
 
       alert(`Profile created successfully! Profile Key: ${newProfileKey}`);

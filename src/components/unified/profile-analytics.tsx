@@ -29,7 +29,7 @@ interface ProfileAnalyticsProps {
 export function ProfileAnalytics({
   showActions = true,
 }: ProfileAnalyticsProps) {
-  const { profile, profileMetadata } = useProfile();
+  const { profile } = useProfile();
 
   if (!profile) {
     return (

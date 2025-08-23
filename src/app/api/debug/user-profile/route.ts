@@ -1,7 +1,7 @@
 import { getCurrentUserProfileKey } from "@/lib/clerk-utils";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     // Get the current user's Profile-Key from Clerk metadata
     const profileKey = await getCurrentUserProfileKey();

@@ -29,7 +29,7 @@ interface ProfileOverviewProps {
 
 export function ProfileOverview({
   showActions = true,
-  compact = false,
+  // compact = false,
 }: ProfileOverviewProps) {
   const {
     profile,

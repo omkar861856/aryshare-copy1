@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 const AYR_API_KEY = process.env.AYR_API_KEY;
 const AYR_API_URL = "https://api.ayrshare.com/api";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     console.log("🧪 Testing Ayrshare API directly...");
 

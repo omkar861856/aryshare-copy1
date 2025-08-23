@@ -32,9 +32,9 @@ interface SocialAccountsOverviewProps {
 
 export function SocialAccountsOverview({
   showActions = true,
-  compact = false,
+  // compact = false,
 }: SocialAccountsOverviewProps) {
-  const { profile, profileMetadata, createProfile } = useProfile();
+  const { profile, createProfile } = useProfile();
 
   if (!profile) {
     return (
