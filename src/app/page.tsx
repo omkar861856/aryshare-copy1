@@ -1,5 +1,6 @@
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -20,14 +21,18 @@ export default function Home() {
                 Sign in or create an account to access the full application.
               </p>
               <div className="flex gap-4 justify-center">
-                <Image
-                  className="dark:invert"
-                  src="/next.svg"
-                  alt="Next.js logo"
-                  width={120}
-                  height={25}
-                  priority
-                />
+                <Link
+                  href="/sign-in"
+                  className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/sign-up"
+                  className="inline-block bg-white text-blue-600 px-6 py-3 rounded-lg border border-blue-600 hover:bg-blue-50 transition-colors font-medium"
+                >
+                  Sign Up
+                </Link>
               </div>
             </div>
           </div>

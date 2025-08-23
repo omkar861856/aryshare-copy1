@@ -124,7 +124,7 @@ export function TopNavigation() {
             </Button>
 
             {/* User Menu */}
-            {isSignedIn && (
+            {isSignedIn ? (
               <div className="flex items-center space-x-3">
                 <div className="hidden md:block text-right">
                   <div className="text-sm font-medium text-gray-900">
@@ -141,6 +141,17 @@ export function TopNavigation() {
                     },
                   }}
                 />
+              </div>
+            ) : (
+              <div className="flex items-center space-x-3">
+                <Link href="/sign-in">
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/sign-up">
+                  <Button size="sm">Sign Up</Button>
+                </Link>
               </div>
             )}
           </div>
