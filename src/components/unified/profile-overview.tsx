@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,17 +8,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { useProfile } from "@/contexts/profile-context";
 import {
   AlertCircle,
   Calendar,
-  CheckCircle,
   Plus,
   RefreshCw,
   TrendingUp,
-  UserCircle,
   Users,
+  XCircle,
 } from "lucide-react";
 
 interface ProfileOverviewProps {
@@ -29,8 +26,8 @@ interface ProfileOverviewProps {
 
 export function ProfileOverview({
   showActions = true,
-  // compact = false,
-}: ProfileOverviewProps) {
+}: // compact = false,
+ProfileOverviewProps) {
   const {
     profile,
     profileId,
@@ -77,10 +74,6 @@ export function ProfileOverview({
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Retry
               </Button>
-              <Button onClick={createProfile} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Profile
-              </Button>
             </div>
           )}
         </CardContent>
@@ -90,40 +83,50 @@ export function ProfileOverview({
 
   if (!hasProfile && !isLoading) {
     return (
-      <Card className="border-amber-200 bg-amber-50">
+      <Card className="border-dashed">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-amber-600">
-            <AlertCircle className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
             No Profile Found
           </CardTitle>
           <CardDescription>
-            Create your Ayrshare profile to start managing social media accounts
+            You don&apos;t have an Ayrshare profile yet
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {showActions && (
-            <Button onClick={createProfile} className="w-full">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Profile
-            </Button>
-          )}
+          <div className="text-center py-6">
+            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-4">
+              An Ayrshare profile is required to access social media management
+              features.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Please contact your administrator to set up your profile.
+            </p>
+            {showActions && (
+              <Button onClick={createProfile} className="mt-4">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Profile
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (!profile && profileId) {
+  if (!profile) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <UserCircle className="h-5 w-5" />
-            Profile Loading
+            <XCircle className="h-5 w-5" />
+            Profile Unavailable
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Profile ID found, loading details...
+            Unable to load profile information at this time.
           </p>
         </CardContent>
       </Card>
@@ -131,138 +134,102 @@ export function ProfileOverview({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <UserCircle className="h-5 w-5" />
+    <div className="space-y-6">
+      {/* Profile Header */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            {profile.title || "User Profile"}
+          </CardTitle>
+          <CardDescription>Profile ID: {profileId || "N/A"}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <CardTitle>{profile?.title || "User Profile"}</CardTitle>
-              <CardDescription>
-                {profileMetadata.isActive
-                  ? "Active Profile"
-                  : "Inactive Profile"}
-              </CardDescription>
+              <p className="text-sm font-medium text-muted-foreground">
+                Status
+              </p>
+              <p className="text-sm">
+                {profile.suspended ? "Suspended" : "Active"}
+              </p>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="font-mono text-xs">
-              {profileId?.substring(0, 8)}...
-            </Badge>
-            {profileMetadata.isActive ? (
-              <Badge variant="outline" className="text-green-600">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Active
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-amber-600">
-                <AlertCircle className="h-3 w-3 mr-1" />
-                Inactive
-              </Badge>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Profile Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">
-                Social Accounts
-              </span>
-            </div>
-            <p className="text-2xl font-bold">
-              {profileMetadata.socialAccountsCount}
-            </p>
-          </div>
-
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">
-                Monthly Posts
-              </span>
-            </div>
-            <p className="text-2xl font-bold">
-              {profileMetadata.monthlyUsage.posts}
-            </p>
-          </div>
-
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">
-                Quota
-              </span>
-            </div>
-            <p className="text-2xl font-bold">
-              {profileMetadata.monthlyUsage.quota === 0
-                ? "∞"
-                : profileMetadata.monthlyUsage.quota}
-            </p>
-          </div>
-
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <RefreshCw className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
                 Last Updated
-              </span>
+              </p>
+              <p className="text-sm">
+                {profile.lastUpdated
+                  ? new Date(profile.lastUpdated).toLocaleDateString()
+                  : "N/A"}
+              </p>
             </div>
-            <p className="text-sm font-medium">
-              {profileMetadata.lastUpdated
-                ? new Date(profileMetadata.lastUpdated).toLocaleDateString()
-                : "Never"}
-            </p>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Monthly Usage Progress */}
-        {profileMetadata.monthlyUsage.quota > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">Monthly Usage</span>
-              <span className="text-muted-foreground">
-                {profileMetadata.monthlyUsage.posts} /{" "}
-                {profileMetadata.monthlyUsage.quota}
-              </span>
+      {/* Profile Stats */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Social Accounts
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {profile.activeSocialAccounts?.length || 0}
             </div>
-            <Progress
-              value={
-                (profileMetadata.monthlyUsage.posts /
-                  profileMetadata.monthlyUsage.quota) *
-                100
-              }
-              className="h-2"
-            />
-            <p className="text-xs text-muted-foreground">
-              {profileMetadata.monthlyUsage.remaining} posts remaining this
-              month
-            </p>
-          </div>
-        )}
+            <p className="text-xs text-muted-foreground">Connected platforms</p>
+          </CardContent>
+        </Card>
 
-        {/* Actions */}
-        {showActions && (
-          <div className="flex gap-2 pt-2">
-            <Button
-              onClick={refreshProfile}
-              variant="outline"
-              size="sm"
-              className="flex-1"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Button size="sm" className="flex-1">
-              <Users className="h-4 w-4 mr-2" />
-              Manage
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Posts</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {profile.monthlyPostCount || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Posts this month</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Quota</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {profile.monthlyPostQuota || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Posts allowed</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Profile Actions */}
+      {showActions && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">
+              Profile Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Button onClick={refreshProfile} variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh Profile
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

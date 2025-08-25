@@ -1,20 +1,12 @@
-import { ayrshareAPI } from "@/lib/ayrshare-api";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
+const AYR_API_KEY = process.env.AYR_API_KEY;
+const AYR_API_URL = "https://api.ayrshare.com/api";
+
 export async function GET(req: NextRequest) {
   try {
-    console.log("🔍 Starting user profile fetch...");
-    console.log(
-      "🔑 Environment check - AYR_API_KEY:",
-      process.env.AYR_API_KEY ? "SET" : "NOT SET"
-    );
-    console.log(
-      "🔑 API Key preview:",
-      process.env.AYR_API_KEY
-        ? `${process.env.AYR_API_KEY.substring(0, 8)}...`
-        : "N/A"
-    );
+    console.log("🔍 Fetching Ayrshare user profile...");
 
     // Get the current authenticated user from Clerk
     const user = await currentUser();
@@ -26,126 +18,80 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    console.log("✅ User authenticated:", user.id);
-    console.log("📋 User metadata:", user.publicMetadata);
-
-    // Extract Profile-Key from request headers (preferred) or fall back to Clerk metadata
-    const profileKey =
-      req.headers.get("Profile-Key") ||
-      (user.publicMetadata?.["Profile-Key"] as string);
-
+    // Get Profile-Key from user metadata
+    const profileKey = user.publicMetadata?.["Profile-Key"] as string;
     if (!profileKey) {
-      console.log("❌ No Profile-Key found in headers or user metadata");
+      console.log("❌ No Profile-Key found in user metadata");
       return NextResponse.json(
-        {
-          error: "User profile not found",
-          details:
-            "No Profile-Key found in request headers or user metadata. User may not have an Ayrshare profile yet.",
-        },
+        { error: "No Profile-Key found. Please create a profile first." },
         { status: 404 }
       );
     }
 
-    console.log("🔑 Found Profile-Key:", profileKey);
-    console.log(
-      "📋 Source:",
-      req.headers.get("Profile-Key") ? "Request Header" : "Clerk Metadata"
-    );
+    console.log("✅ Profile-Key found:", profileKey);
 
-    // Get query parameters for additional options
+    if (!AYR_API_KEY) {
+      console.error("❌ AYR_API_KEY environment variable is not set");
+      return NextResponse.json(
+        { error: "Configuration error: AYR_API_KEY not set" },
+        { status: 500 }
+      );
+    }
+
+    // Get query parameters
     const { searchParams } = new URL(req.url);
     const instagramDetails = searchParams.get("instagramDetails") === "true";
 
-    console.log(
-      "📡 Making request to Ayrshare API with Profile-Key:",
-      profileKey
-    );
-    console.log("📊 Instagram details requested:", instagramDetails);
-    console.log(
-      "🌐 Ayrshare API instance:",
-      ayrshareAPI ? "Created" : "Not created"
-    );
+    // Build the API URL
+    let apiUrl = `${AYR_API_URL}/user`;
+    if (instagramDetails) {
+      apiUrl += "?instagramDetails=true";
+    }
 
-    // Make request to Ayrshare API using the Profile-Key
-    console.log("🔍 About to call ayrshareAPI.getUserDetails with:");
-    console.log("  - profileKey:", profileKey);
-    console.log("  - params:", { instagramDetails });
-    console.log("  - ayrshareAPI instance:", ayrshareAPI);
+    console.log("🌐 Fetching from Ayrshare API:", apiUrl);
 
-    const userDetails = await ayrshareAPI.getUserDetails(profileKey, {
-      instagramDetails,
+    // Fetch user profile from Ayrshare
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${AYR_API_KEY}`,
+        "Profile-Key": profileKey,
+        "Content-Type": "application/json",
+      },
     });
 
-    console.log("✅ Successfully fetched user details from Ayrshare");
-    console.log("📊 Profile title:", userDetails.title);
-    console.log(
-      "🔗 Active social accounts:",
-      userDetails.activeSocialAccounts?.length || 0
-    );
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("❌ Failed to fetch Ayrshare user profile:", errorData);
 
-    return NextResponse.json(userDetails, { status: 200 });
-  } catch (error) {
-    console.error("❌ Error getting user profile details:", error);
-    console.error("❌ Error details:", {
-      message: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : "No stack trace",
-      name: error instanceof Error ? error.name : "Unknown error type",
-    });
-
-    // Handle specific Ayrshare API errors
-    if (error instanceof Error) {
-      if (error.message.includes("Profile Key Not Found")) {
+      // Handle specific error cases
+      if (response.status === 403) {
         return NextResponse.json(
           {
-            error: "Profile not found",
+            error: "Profile Key Not Found",
             details:
-              "The user's Ayrshare profile could not be found with the provided Profile-Key",
-          },
-          { status: 404 }
-        );
-      }
-
-      if (error.message.includes("403")) {
-        return NextResponse.json(
-          {
-            error: "Access denied",
-            details:
-              "Access to the user profile was denied. Please check your API key and permissions.",
+              "The Profile-Key is invalid or has been revoked. Please verify your profile setup.",
+            code: 144,
           },
           { status: 403 }
         );
       }
 
-      // Check for specific error patterns
-      if (
-        error.message.includes("401") ||
-        error.message.includes("Unauthorized")
-      ) {
-        return NextResponse.json(
-          {
-            error: "Authentication failed",
-            details:
-              "The Ayrshare API key is invalid or expired. Please check your configuration.",
-          },
-          { status: 401 }
-        );
-      }
-
-      if (
-        error.message.includes("500") ||
-        error.message.includes("Internal Server Error")
-      ) {
-        return NextResponse.json(
-          {
-            error: "Ayrshare API error",
-            details:
-              "The Ayrshare service is experiencing issues. Please try again later.",
-          },
-          { status: 502 }
-        );
-      }
+      return NextResponse.json(
+        {
+          error: "Failed to fetch Ayrshare user profile",
+          details: errorData,
+        },
+        { status: response.status }
+      );
     }
 
+    const profileData = await response.json();
+    console.log("✅ Ayrshare user profile fetched successfully");
+
+    return NextResponse.json(profileData);
+  } catch (error) {
+    console.error("❌ Error fetching Ayrshare user profile:", error);
     return NextResponse.json(
       {
         error: "Internal server error",

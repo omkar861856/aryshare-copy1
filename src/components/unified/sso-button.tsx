@@ -45,7 +45,9 @@ export function SSOButton({
 
   const generateSSO = async () => {
     if (!profileId) {
-      setError("No profile found. Please create a profile first.");
+      setError(
+        "No profile found. Please contact your administrator to set up your profile."
+      );
       return;
     }
 

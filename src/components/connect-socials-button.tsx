@@ -2,20 +2,18 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  generateSSOUrl,
-  testRandomPost,
-} from "@/lib/ayrshare-utils";
-import { useUser } from "@clerk/nextjs";
-import { Link, Settings, Share2, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+  AlertCircle,
+  CheckCircle,
+  ExternalLink,
+  RefreshCw,
+  TestTube,
+  Users,
+  XCircle,
+} from "lucide-react";
+import { useState } from "react";
 
 interface ConnectSocialsButtonProps {
   profileKey?: string;
@@ -30,89 +28,62 @@ export function ConnectSocialsButton({
   onProfileCreated,
   className,
 }: ConnectSocialsButtonProps) {
-  const { user, isLoaded } = useUser();
+  const { currentUser, isLoaded } = useCurrentUser();
   const [isLoading, setIsLoading] = useState(false);
-  // const [profile, setProfile] = useState<AyrshareUserProfile | null>(null);
-  const [testResult, setTestResult] = useState<string | null>(null);
-  const [localProfileKey, setLocalProfileKey] = useState<string | null>(null);
+  const [localProfileKey, setLocalProfileKey] = useState<string | undefined>(
+    propProfileKey
+  );
+  const [testResult, setTestResult] = useState<{
+    success: boolean;
+    message: string;
+    details?: any;
+  } | null>(null);
 
-  // Get profile key from Clerk metadata or props
-  const profileKey =
-    localProfileKey ||
-    propProfileKey ||
-    (user?.unsafeMetadata?.ayrProfileKey as string);
-  const userEmail = propUserEmail || user?.primaryEmailAddress?.emailAddress;
-
-  // Sync profile key from Clerk metadata on mount
-  useEffect(() => {
-    if (user?.unsafeMetadata?.ayrProfileKey && !localProfileKey) {
-      setLocalProfileKey(user.unsafeMetadata.ayrProfileKey as string);
-      console.log(
-        "Profile key synced from Clerk metadata:",
-        user.unsafeMetadata.ayrProfileKey
-      );
-    }
-  }, [user, localProfileKey]);
-
-  const handleConnectSocials = () => {
-    if (!profileKey) {
-      alert("No profile key available. Please create a profile first.");
-      return;
-    }
-
-    // Show loading state
-    setIsLoading(true);
-
-    // Open SSO URL in new tab
-    const ssoUrl = generateSSOUrl(profileKey);
-    const newWindow = window.open(ssoUrl, "_blank");
-
-    // Reset loading state after a short delay
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-
-    // Check if window was blocked
-    if (!newWindow) {
-      alert(
-        "Pop-up blocked! Please allow pop-ups for this site and try again."
-      );
-      setIsLoading(false);
-    }
-  };
+  const userEmail = propUserEmail || currentUser?.email;
+  const user = currentUser;
 
   const handleTestPost = async () => {
-    if (!profileKey) {
-      alert("No profile key available. Please create a profile first.");
+    if (!localProfileKey) {
+      alert("Profile key is required to test posting.");
       return;
     }
 
     setIsLoading(true);
     try {
-      const result = await testRandomPost(profileKey);
-      setTestResult(`Test post successful! Post ID: ${result.id}`);
-    } catch (error) {
-      console.error("Test post error:", error);
-      let errorMessage = "Unknown error";
+      const response = await fetch("/api/ayrshare/post", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          profileKey: localProfileKey,
+          platforms: ["twitter"],
+          text: "This is a test post from the Ayrshare integration! 🚀",
+        }),
+      });
 
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === "object" && error !== null) {
-        // Handle API error responses
-        if ("details" in error && typeof error.details === "string") {
-          errorMessage = error.details;
-        } else if ("message" in error && typeof error.message === "string") {
-          errorMessage = error.message;
-        } else if ("error" in error && typeof error.error === "string") {
-          errorMessage = error.error;
-        } else {
-          errorMessage = JSON.stringify(error);
-        }
-      } else if (typeof error === "string") {
-        errorMessage = error;
+      const data = await response.json();
+
+      if (response.ok) {
+        setTestResult({
+          success: true,
+          message: "Test post successful!",
+          details: data,
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: `Test post failed: ${data.error || response.statusText}`,
+          details: data,
+        });
       }
-
-      setTestResult(`Test post failed: ${errorMessage}`);
+    } catch (error) {
+      setTestResult({
+        success: false,
+        message: `Test post error: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -124,60 +95,41 @@ export function ConnectSocialsButton({
       return;
     }
 
-    if (!user) {
-      alert("You must be signed in to create a profile.");
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const response = await fetch("/api/ayrshare/profiles", {
+      const response = await fetch("/api/ayrshare/create-user-profile", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          title: `User ${userEmail}`,
-          email: userEmail,
-        }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to create profile: ${response.statusText}`);
-      }
-
       const data = await response.json();
-      const newProfileKey = data.key;
 
-      // Store the profile key in Clerk metadata
-      try {
-        await user.update({
-          unsafeMetadata: {
-            ...user.unsafeMetadata,
-            ayrProfileKey: newProfileKey,
-          },
+      if (response.ok) {
+        setLocalProfileKey(data.profileKey);
+        onProfileCreated?.(data.profileKey);
+        setTestResult({
+          success: true,
+          message: "Profile created successfully!",
+          details: data,
         });
-        console.log("Profile key stored in Clerk metadata:", newProfileKey);
-      } catch (metadataError) {
-        console.error(
-          "Failed to store profile key in metadata:",
-          metadataError
-        );
-        // Continue anyway - the profile was created successfully
+      } else {
+        setTestResult({
+          success: false,
+          message: `Profile creation failed: ${
+            data.error || response.statusText
+          }`,
+          details: data,
+        });
       }
-
-      // Update local state
-      setLocalProfileKey(newProfileKey);
-      // setProfile({ key: newProfileKey, title: data.title, email: userEmail });
-      onProfileCreated?.(newProfileKey);
-
-      alert(`Profile created successfully! Profile Key: ${newProfileKey}`);
     } catch (error) {
-      alert(
-        `Failed to create profile: ${
+      setTestResult({
+        success: false,
+        message: `Profile creation error: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+        }`,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -186,151 +138,154 @@ export function ConnectSocialsButton({
   // Show loading state while Clerk is loading
   if (!isLoaded) {
     return (
-      <Card className={className}>
-        <CardContent className="flex items-center justify-center h-32">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-            <p className="text-sm text-muted-foreground">
-              Loading user data...
-            </p>
-          </div>
+      <div className="flex items-center justify-center p-4">
+        <RefreshCw className="h-4 w-4 animate-spin" />
+        <span className="ml-2">Loading...</span>
+      </div>
+    );
+  }
+
+  // Show error if no user email
+  if (!userEmail) {
+    return (
+      <Card className="border-red-200 bg-red-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-600">
+            <XCircle className="h-5 w-5" />
+            Email Required
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-red-600">
+            User email is required to connect social accounts.
+          </p>
         </CardContent>
       </Card>
     );
   }
 
-  // Show sign-in prompt if user is not authenticated
+  // Show error if not signed in
   if (!user) {
     return (
-      <Card className={className}>
-        <CardContent className="flex items-center justify-center h-32">
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-2">
-              Please sign in to connect social accounts
-            </p>
-            <Button variant="outline" size="sm">
-              Sign In
-            </Button>
-          </div>
+      <Card className="border-red-200 bg-red-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-600">
+            <XCircle className="h-5 w-5" />
+            Sign In Required
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-red-600">
+            You must be signed in to connect social accounts.
+          </p>
         </CardContent>
       </Card>
     );
   }
 
-  return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Link className="h-5 w-5" />
-          Connect Social Media Accounts
-        </CardTitle>
-        <CardDescription>
-          Link your social media accounts to post across multiple platforms
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {profileKey ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium">Profile Connected</span>
-              </div>
-              <Badge variant="secondary" className="text-xs">
-                {profileKey.slice(0, 8)}...
-              </Badge>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={handleConnectSocials}
-                className="flex-1"
-                disabled={isLoading}
-              >
-                <Link className="h-4 w-4 mr-2" />
-                Connect Socials
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={handleTestPost}
-                disabled={isLoading}
-              >
-                <Share2 className="h-4 w-4 mr-2" />
-                Test Post
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  try {
-                    const response = await fetch("/api/debug/test-post", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ profileKey }),
-                    });
-                    const result = await response.json();
-                    console.log("Debug test result:", result);
-                    if (result.success) {
-                      setTestResult(`Debug test successful: ${result.message}`);
-                    } else {
-                      setTestResult(
-                        `Debug test failed: ${result.error} - ${JSON.stringify(
-                          result.details
-                        )}`
-                      );
-                    }
-                  } catch (error) {
-                    console.error("Debug test error:", error);
-                    setTestResult(
-                      `Debug test error: ${
-                        error instanceof Error ? error.message : "Unknown error"
-                      }`
-                    );
-                  }
-                }}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                Debug
-              </Button>
-            </div>
-
-            {testResult && (
-              <div
-                className={`text-sm p-2 rounded ${
-                  testResult.includes("successful")
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "bg-red-50 text-red-700 border border-red-200"
-                }`}
-              >
-                {testResult}
-              </div>
-            )}
+  // Show success state if profile key exists
+  if (localProfileKey) {
+    return (
+      <Card className="border-green-200 bg-green-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-green-600">
+            <CheckCircle className="h-5 w-5" />
+            Profile Connected
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="font-mono text-xs">
+              {localProfileKey}
+            </Badge>
+            <Badge variant="outline" className="text-green-600">
+              Active
+            </Badge>
           </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-amber-600">
-              <Settings className="h-4 w-4" />
-              <span className="text-sm">No profile created yet</span>
-            </div>
 
+          <div className="space-y-2">
             <Button
-              onClick={handleCreateProfile}
-              disabled={isLoading || !userEmail}
+              onClick={handleTestPost}
+              disabled={isLoading}
               className="w-full"
+              variant="outline"
             >
-              <Users className="h-4 w-4 mr-2" />
-              {isLoading ? "Creating Profile..." : "Create Ayrshare Profile"}
+              {isLoading ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <TestTube className="h-4 w-4 mr-2" />
+              )}
+              Test Post
             </Button>
 
-            {!userEmail && (
-              <p className="text-xs text-muted-foreground">
-                User email is required to create a profile
-              </p>
-            )}
+            <Button asChild className="w-full" variant="outline">
+              <a
+                href={`https://app.ayrshare.com/dashboard?profileKey=${localProfileKey}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open Ayrshare Dashboard
+              </a>
+            </Button>
           </div>
-        )}
+
+          {testResult && (
+            <div
+              className={`p-3 rounded-lg border ${
+                testResult.success
+                  ? "border-green-200 bg-green-100 text-green-800"
+                  : "border-red-200 bg-red-100 text-red-800"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                {testResult.success ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : (
+                  <XCircle className="h-4 w-4" />
+                )}
+                <span className="font-medium">
+                  {testResult.success ? "Success" : "Error"}
+                </span>
+              </div>
+              <p className="text-sm">{testResult.message}</p>
+              {testResult.details && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-xs">
+                    View Details
+                  </summary>
+                  <pre className="mt-2 text-xs bg-white/50 p-2 rounded overflow-auto">
+                    {JSON.stringify(testResult.details, null, 2)}
+                  </pre>
+                </details>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show message that profile creation is not available
+  return (
+    <Card className="border-amber-200 bg-amber-50">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-amber-600">
+          <AlertCircle className="h-5 w-5" />
+          Profile Required
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-amber-800 mb-4">
+          An Ayrshare profile is required to connect social media accounts.
+        </p>
+        <p className="text-sm text-amber-700 mb-4">
+          Create your profile to start managing social media accounts.
+        </p>
+        <Button onClick={handleCreateProfile} className="w-full">
+          <Users className="h-4 w-4 mr-2" />
+          Create Ayrshare Profile
+        </Button>
       </CardContent>
     </Card>
   );

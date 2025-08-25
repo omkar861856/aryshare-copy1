@@ -12,6 +12,7 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import {
   Activity,
+  BarChart3,
   Calendar,
   Eye,
   Heart,
@@ -36,16 +37,16 @@ export function ProfileAnalytics({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Analytics
+            <BarChart3 className="h-5 w-5" />
+            Profile Analytics
           </CardTitle>
           <CardDescription>
-            No profile data available for analytics
+            View performance metrics and insights
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Please create a profile first to view analytics.
+            Please contact your administrator to set up your profile first.
           </p>
         </CardContent>
       </Card>

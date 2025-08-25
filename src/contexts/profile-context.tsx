@@ -37,45 +37,29 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const { currentUser, isLoaded, isSignedIn } = useCurrentUser();
   const [profile, setProfile] = useState<UserProfileDetails | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Get profile ID from user metadata or profile data
-  const profileId =
-    (isLoaded && currentUser?.metadata?.["Profile-Key"]) ||
-    profile?.refId ||
-    null;
-  const hasProfile = !!profileId && !!profile;
+  // Get profile ID from user metadata
+  useEffect(() => {
+    if (isLoaded && isSignedIn && currentUser) {
+      const metadataProfileId = currentUser.metadata?.["Profile-Key"] as string;
+      if (metadataProfileId && metadataProfileId !== profileId) {
+        setProfileId(metadataProfileId);
+      }
+    }
+  }, [isLoaded, isSignedIn, currentUser, profileId]);
 
-  // Profile metadata for consistent display across the platform
-  const profileMetadata = {
-    isActive: !!profile && !(profile.suspended ?? false),
-    lastUpdated: profile?.lastUpdated || null,
-    socialAccountsCount: profile?.activeSocialAccounts?.length || 0,
-    monthlyUsage: {
-      posts: profile?.monthlyPostCount || 0,
-      quota: profile?.monthlyPostQuota || 0,
-      remaining:
-        (profile?.monthlyPostQuota || 0) - (profile?.monthlyPostCount || 0),
-    },
-  };
-
-  // Fetch profile data from Ayrshare
-  const fetchProfile = async (profileKey: string) => {
-    if (!profileKey) return;
+  // Fetch profile data
+  const fetchProfile = async (id: string) => {
+    if (!id) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/ayrshare/user", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Profile-Key": profileKey,
-        },
-      });
-
+      const response = await fetch(`/api/ayrshare/user?profileKey=${id}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
@@ -83,14 +67,15 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
-      const profileData = await response.json();
-      setProfile(profileData);
-      console.log("✅ Profile loaded:", profileData);
+      const data = await response.json();
+      setProfile(data);
+      setProfileId(id);
+      console.log("✅ Profile loaded:", data);
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : "Failed to fetch profile";
+        err instanceof Error ? err.message : "Failed to load profile";
       setError(errorMessage);
-      console.error("❌ Error fetching profile:", err);
+      console.error("❌ Error loading profile:", err);
     } finally {
       setIsLoading(false);
     }
@@ -164,13 +149,23 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const value: ProfileContextType = {
     profile,
     profileId,
-    hasProfile,
+    hasProfile: !!profile,
     isLoading,
     error,
     refreshProfile,
     createProfile,
     clearProfile,
-    profileMetadata,
+    profileMetadata: {
+      isActive: profile?.suspended === false || false,
+      lastUpdated: profile?.lastUpdated || null,
+      socialAccountsCount: profile?.activeSocialAccounts?.length || 0,
+      monthlyUsage: {
+        posts: profile?.monthlyPostCount || 0,
+        quota: profile?.monthlyPostQuota || 0,
+        remaining:
+          (profile?.monthlyPostQuota || 0) - (profile?.monthlyPostCount || 0),
+      },
+    },
   };
 
   return (

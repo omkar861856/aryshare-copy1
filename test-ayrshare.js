@@ -1,37 +1,19 @@
 #!/usr/bin/env node
 
 /**
- * Simple test script for Ayrshare integration
+ * Test script for Ayrshare profile creation
  * Run with: node test-ayrshare.js
  */
 
-const API_KEY = "7FA008E8-5E8F47C9-978AF1AF-B2F965B1";
-const DOMAIN = "id-8ig3h";
+const API_KEY = process.env.AYR_API_KEY || "YOUR_API_KEY";
 const BASE_URL = "https://api.ayrshare.com/api";
 
-async function testAyrshareAPI() {
-  console.log("🧪 Testing Ayrshare API Integration...\n");
+async function testProfileCreation() {
+  console.log("🧪 Testing Ayrshare Profile Creation...\n");
 
   try {
-    // Test 1: Get profiles
-    console.log("1️⃣ Testing GET /profiles...");
-    const profilesResponse = await fetch(`${BASE_URL}/profiles`, {
-      headers: {
-        Authorization: `Bearer ${API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (profilesResponse.ok) {
-      const profiles = await profilesResponse.json();
-      console.log("✅ Profiles API working");
-      console.log(`   Found ${profiles.count || 0} profiles\n`);
-    } else {
-      console.log("❌ Profiles API failed:", await profilesResponse.text());
-    }
-
-    // Test 2: Create a test profile
-    console.log("2️⃣ Testing POST /profiles...");
+    // Test 1: Create a new profile
+    console.log("1️⃣ Creating new profile...");
     const createProfileResponse = await fetch(`${BASE_URL}/profiles`, {
       method: "POST",
       headers: {
@@ -40,30 +22,46 @@ async function testAyrshareAPI() {
       },
       body: JSON.stringify({
         title: `Test Profile ${Date.now()}`,
+        email: "test@example.com",
       }),
     });
 
     if (createProfileResponse.ok) {
       const newProfile = await createProfileResponse.json();
-      console.log("✅ Create profile API working");
-      console.log(`   Created profile: ${newProfile.key}\n`);
+      console.log("✅ Profile created successfully!");
+      console.log("   Profile Key:", newProfile.key);
+      console.log("   Title:", newProfile.title);
+      console.log("   Status:", newProfile.status);
 
-      // Test 3: Generate JWT (requires private key)
-      console.log("3️⃣ Testing POST /profiles/generateJWT...");
-      console.log(
-        "   ⚠️  This requires your private key in environment variables"
+      // Test 2: Get profile details
+      console.log("\n2️⃣ Getting profile details...");
+      const getProfileResponse = await fetch(
+        `${BASE_URL}/user?profileKey=${newProfile.key}`,
+        {
+          headers: {
+            Authorization: `Bearer ${API_KEY}`,
+            "Profile-Key": newProfile.key,
+          },
+        }
       );
-      console.log("   Set AYR_PRIVATE_KEY_B64 in your .env.local file\n");
 
-      // Test 4: Test posting (requires profile key and connected accounts)
-      console.log("4️⃣ Testing POST /post...");
-      console.log(
-        "   ⚠️  This requires a profile key and connected social accounts"
-      );
-      console.log("   Use the Connect Socials button in your app first\n");
+      if (getProfileResponse.ok) {
+        const profileDetails = await getProfileResponse.json();
+        console.log("✅ Profile details retrieved!");
+        console.log("   Title:", profileDetails.title);
+        console.log(
+          "   Active Social Accounts:",
+          profileDetails.activeSocialAccounts?.length || 0
+        );
+      } else {
+        console.log(
+          "❌ Failed to get profile details:",
+          await getProfileResponse.text()
+        );
+      }
     } else {
       console.log(
-        "❌ Create profile API failed:",
+        "❌ Profile creation failed:",
         await createProfileResponse.text()
       );
     }
@@ -71,13 +69,11 @@ async function testAyrshareAPI() {
     console.error("❌ Test failed:", error.message);
   }
 
-  console.log("🎯 Next steps:");
-  console.log("   1. Set up your .env.local file with AYR_PRIVATE_KEY_B64");
-  console.log("   2. Run your Next.js app: npm run dev");
-  console.log("   3. Navigate to /dashboard to see the integration");
-  console.log("   4. Use the Connect Socials button to test SSO");
-  console.log("   5. Check the profiles page for management features");
+  console.log("\n🎯 Next steps:");
+  console.log("   1. Use the profile key to test posting");
+  console.log("   2. Test SSO generation with the profile key");
+  console.log("   3. Connect social media accounts");
 }
 
 // Run the test
-testAyrshareAPI().catch(console.error);
+testProfileCreation().catch(console.error);

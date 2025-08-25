@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,7 +9,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAyrshareUser } from "@/hooks/use-ayrshare-user";
-import { AlertCircle, CheckCircle, RefreshCw, XCircle } from "lucide-react";
+import {
+  Activity,
+  AlertCircle,
+  Calendar,
+  RefreshCw,
+  TrendingUp,
+  Users,
+  XCircle,
+} from "lucide-react";
 import { CreateUserProfile } from "./create-user-profile";
 
 export function UserProfileDetails() {
@@ -22,12 +29,12 @@ export function UserProfileDetails() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <RefreshCw className="h-5 w-5 animate-spin" />
-            Loading Profile Details...
+            Loading Profile...
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Fetching your Ayrshare profile information...
+            Fetching your profile information...
           </p>
         </CardContent>
       </Card>
@@ -49,7 +56,7 @@ export function UserProfileDetails() {
                 No Ayrshare Profile Found
               </CardTitle>
               <CardDescription>
-                You need to create an Ayrshare profile to view your details and
+                You need to have an Ayrshare profile to view your details and
                 connect social media accounts.
               </CardDescription>
             </CardHeader>
@@ -58,6 +65,9 @@ export function UserProfileDetails() {
                 An Ayrshare profile is required to access social media
                 management features. This profile will be linked to your account
                 and used for all future operations.
+              </p>
+              <p className="text-sm text-amber-600">
+                Please contact your administrator to set up your profile.
               </p>
             </CardContent>
           </Card>
@@ -95,15 +105,14 @@ export function UserProfileDetails() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-muted-foreground">
-            <AlertCircle className="h-5 w-5" />
-            No Profile Found
+          <CardTitle className="flex items-center gap-2">
+            <XCircle className="h-5 w-5" />
+            No Profile Data
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            No Ayrshare profile found for this user. Please ensure the user has
-            been created in Ayrshare.
+            No profile data available at this time.
           </p>
         </CardContent>
       </Card>
@@ -115,194 +124,152 @@ export function UserProfileDetails() {
       {/* Profile Header */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>{userDetails.title || "User Profile"}</span>
-            <Badge variant="secondary">{userDetails.refId}</Badge>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            {userDetails.title || "User Profile"}
           </CardTitle>
           <CardDescription>
-            Profile created on{" "}
-            {new Date(userDetails.created.utc).toLocaleDateString()}
+            Profile ID: {userDetails.refId || "N/A"}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {userDetails.email && (
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Email</p>
-              <p>{userDetails.email}</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                Monthly Posts
+                Status
               </p>
-              <p className="text-2xl font-bold">
-                {userDetails.monthlyPostCount || 0}
+              <p className="text-sm">
+                {userDetails.suspended ? "Suspended" : "Active"}
               </p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                Monthly Quota
+                Last Updated
               </p>
-              <p className="text-2xl font-bold">
-                {userDetails.monthlyPostQuota || "Unlimited"}
+              <p className="text-sm">
+                {userDetails.lastUpdated
+                  ? new Date(userDetails.lastUpdated).toLocaleDateString()
+                  : "N/A"}
               </p>
             </div>
           </div>
-
-          {userDetails.messagingEnabled && (
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-sm text-green-600">Messaging Enabled</span>
-            </div>
-          )}
         </CardContent>
       </Card>
+
+      {/* Profile Stats */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Social Accounts
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {userDetails.activeSocialAccounts?.length || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Connected platforms</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Posts</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {userDetails.monthlyPostCount || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Posts this month</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Quota</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {userDetails.monthlyPostQuota || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Posts allowed</p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Social Accounts */}
       {userDetails.activeSocialAccounts &&
         userDetails.activeSocialAccounts.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Connected Social Accounts</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Connected Social Accounts
+              </CardTitle>
               <CardDescription>
-                {userDetails.activeSocialAccounts.length} social media accounts
+                {userDetails.activeSocialAccounts.length} platform
+                {userDetails.activeSocialAccounts.length !== 1 ? "s" : ""}{" "}
                 connected
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {userDetails.activeSocialAccounts.map((platform) => (
-                  <Badge
-                    key={platform}
-                    variant="outline"
-                    className="capitalize"
-                  >
-                    {platform}
-                  </Badge>
-                ))}
+              <div className="space-y-2">
+                {userDetails.activeSocialAccounts.map((platform) => {
+                  const accountDetails = userDetails.displayNames?.find(
+                    (d) => d.platform === platform
+                  );
+                  const isActive = accountDetails?.messagingActive || false;
+
+                  return (
+                    <div
+                      key={platform}
+                      className="flex items-center justify-between p-2 border rounded-lg"
+                    >
+                      <span className="capitalize font-medium">{platform}</span>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            isActive ? "bg-green-500" : "bg-gray-400"
+                          }`}
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {isActive ? "Active" : "Inactive"}
+                        </span>
+                        {accountDetails?.username && (
+                          <span className="text-xs text-muted-foreground">
+                            @{accountDetails.username}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
         )}
 
-      {/* Display Names */}
-      {userDetails.displayNames && userDetails.displayNames.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Social Media Profiles</CardTitle>
-            <CardDescription>
-              Detailed information about connected social media accounts
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {userDetails.displayNames.map((profile, index) => (
-                <div key={index} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="capitalize">
-                        {profile.platform}
-                      </Badge>
-                      {profile.username && (
-                        <span className="font-medium">@{profile.username}</span>
-                      )}
-                    </div>
-                    {profile.type && (
-                      <Badge variant="outline" className="text-xs">
-                        {profile.type}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {profile.displayName && (
-                    <p className="font-medium">{profile.displayName}</p>
-                  )}
-
-                  {profile.description && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {profile.description}
-                    </p>
-                  )}
-
-                  <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                    {profile.created && (
-                      <span>
-                        Linked: {new Date(profile.created).toLocaleDateString()}
-                      </span>
-                    )}
-                    {profile.messagingActive && (
-                      <span className="flex items-center gap-1 text-green-600">
-                        <CheckCircle className="h-3 w-3" />
-                        Messaging Active
-                      </span>
-                    )}
-                  </div>
-
-                  {profile.profileUrl && (
-                    <a
-                      href={profile.profileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline text-sm mt-2 inline-block"
-                    >
-                      View Profile →
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Usage Statistics */}
+      {/* Profile Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Usage Statistics</CardTitle>
+          <CardTitle className="text-sm font-medium">Profile Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold">
-                {userDetails.monthlyApiCalls || 0}
-              </p>
-              <p className="text-sm text-muted-foreground">API Calls</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold">
-                {userDetails.monthlyPostCount || 0}
-              </p>
-              <p className="text-sm text-muted-foreground">Posts</p>
-            </div>
-            {userDetails.messagingConversationMonthlyCount !== undefined && (
-              <div className="text-center">
-                <p className="text-2xl font-bold">
-                  {userDetails.messagingConversationMonthlyCount}
-                </p>
-                <p className="text-sm text-muted-foreground">Conversations</p>
-              </div>
-            )}
-            <div className="text-center">
-              <p className="text-2xl font-bold">
-                {userDetails.lastApiCall
-                  ? new Date(userDetails.lastApiCall).toLocaleDateString()
-                  : "Never"}
-              </p>
-              <p className="text-sm text-muted-foreground">Last API Call</p>
-            </div>
+          <div className="flex gap-2">
+            <Button onClick={refetch} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh Profile
+            </Button>
+            <Button variant="outline" size="sm">
+              <Activity className="h-4 w-4 mr-2" />
+              View Activity
+            </Button>
           </div>
         </CardContent>
       </Card>
-
-      {/* Refresh Button */}
-      <div className="flex justify-center">
-        <Button onClick={refetch} variant="outline">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh Profile Data
-        </Button>
-      </div>
     </div>
   );
 }

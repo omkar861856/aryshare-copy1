@@ -1,256 +1,435 @@
 "use client";
 
-import { CreateUserProfile } from "@/components/create-user-profile";
-import { DebugUserProfile } from "@/components/debug-user-profile";
-import { NoSSR } from "@/components/no-ssr";
+import { AnalyticsWidget } from "@/components/analytics/analytics-widget";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProfileAnalytics } from "@/components/unified/profile-analytics";
-import { ProfileNavigation } from "@/components/unified/profile-navigation";
-import { ProfileOverview } from "@/components/unified/profile-overview";
-import { ProfileSettings } from "@/components/unified/profile-settings";
-import { SocialAccountsOverview } from "@/components/unified/social-accounts-overview";
-import { SSOButton } from "@/components/unified/sso-button";
-import {
-  Activity,
-  BarChart3,
-  Bug,
-  Link as LinkIcon,
-  Plus,
-  Settings,
-  TrendingUp,
-  UserCircle,
-  Users,
-} from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useProfile } from "@/contexts/profile-context";
+import { AnalyticsSummary, PlatformType } from "@/lib/analytics-api";
+import { useUser } from "@clerk/nextjs";
+import { AlertCircle, BarChart3, Key, Users } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useMemo, useState } from "react";
 
 export default function ProfilesPage() {
-  const searchParams = useSearchParams();
-  const currentTab = searchParams.get("tab") || "overview";
+  const { user, isSignedIn, isLoaded } = useUser();
+  const { profile, isLoading, error } = useProfile();
+  const [activeTab, setActiveTab] = useState("overview");
 
-  const navigationItems = [
-    {
-      key: "overview",
-      label: "Overview",
-      icon: UserCircle,
-      description: "Profile summary and stats",
-    },
-    {
-      key: "socials",
-      label: "Social Accounts",
-      icon: Users,
-      description: "Manage connected platforms",
-    },
-    {
-      key: "create",
-      label: "Create Profile",
-      icon: Plus,
-      description: "Set up new profiles",
-    },
-    {
-      key: "analytics",
-      label: "Analytics",
-      icon: BarChart3,
-      description: "Performance insights",
-    },
-    {
-      key: "activity",
-      label: "Activity",
-      icon: Activity,
-      description: "Recent actions and posts",
-    },
-    {
-      key: "settings",
-      label: "Settings",
-      icon: Settings,
-      description: "Profile configuration",
-    },
-    {
-      key: "debug",
-      label: "Debug",
-      icon: Bug,
-      description: "Technical details",
-    },
-  ];
+  // Get connected platforms from user profile
+  const getConnectedPlatforms = useCallback((): string[] => {
+    if (!profile) return [];
+
+    const platforms: string[] = [];
+
+    // Check activeSocialAccounts array (these are strings)
+    if (
+      profile.activeSocialAccounts &&
+      Array.isArray(profile.activeSocialAccounts)
+    ) {
+      profile.activeSocialAccounts.forEach((platform: string) => {
+        if (platform && !platforms.includes(platform)) {
+          platforms.push(platform);
+        }
+      });
+    }
+
+    // Check displayNames array for additional platform info (these are objects with platform property)
+    if (profile.displayNames && Array.isArray(profile.displayNames)) {
+      profile.displayNames.forEach((account) => {
+        if (account.platform && !platforms.includes(account.platform)) {
+          platforms.push(account.platform);
+        }
+      });
+    }
+
+    return platforms;
+  }, [profile]);
+
+  const connectedPlatforms = useMemo(
+    () => getConnectedPlatforms(),
+    [getConnectedPlatforms]
+  );
+
+  // Mock analytics data for connected platforms only
+  const getMockAnalyticsData = useCallback(() => {
+    const mockData: Record<string, AnalyticsSummary> = {};
+
+    connectedPlatforms.forEach((platform) => {
+      const normalizedPlatform = platform
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+
+      switch (normalizedPlatform) {
+        case "facebook":
+          mockData[platform] = {
+            platform: "facebook",
+            totalPosts: 0, // Not available in social analytics
+            totalViews: 160, // pageImpressions
+            totalLikes: 587, // fanCount
+            totalComments: 0, // Not available in social analytics
+            totalShares: 0, // Not available in social analytics
+            totalEngagement: 20, // pagePostEngagements
+            averageViews: 160,
+            averageLikes: 587,
+            averageComments: 0,
+            averageShares: 0,
+            averageEngagement: 20,
+            lastUpdated: new Date().toISOString(),
+          };
+          break;
+        case "instagram":
+          mockData[platform] = {
+            platform: "instagram",
+            totalPosts: 266, // mediaCount
+            totalViews: 123212, // viewsCount
+            totalLikes: 116, // likeCount
+            totalComments: 6, // commentsCount
+            totalShares: 0, // Not available in social analytics
+            totalEngagement: 122, // likeCount + commentsCount
+            averageViews: 123212,
+            averageLikes: 116,
+            averageComments: 6,
+            averageShares: 0,
+            averageEngagement: 122,
+            lastUpdated: new Date().toISOString(),
+          };
+          break;
+        case "twitter":
+          mockData[platform] = {
+            platform: "twitter",
+            totalPosts: 0, // Not available in social analytics
+            totalViews: 0, // Not available in social analytics
+            totalLikes: 0, // Not available in social analytics
+            totalComments: 0, // Not available in social analytics
+            totalShares: 0, // Not available in social analytics
+            totalEngagement: 0, // Not available in social analytics
+            averageViews: 0,
+            averageLikes: 0,
+            averageComments: 0,
+            averageShares: 0,
+            averageEngagement: 0,
+            lastUpdated: new Date().toISOString(),
+          };
+          break;
+        case "linkedin":
+          mockData[platform] = {
+            platform: "linkedin",
+            totalPosts: 0, // Not available in social analytics
+            totalViews: 0, // Not available in social analytics
+            totalLikes: 0, // Not available in social analytics
+            totalComments: 0, // Not available in social analytics
+            totalShares: 0, // Not available in social analytics
+            totalEngagement: 0, // Not available in social analytics
+            averageViews: 0,
+            averageLikes: 0,
+            averageComments: 0,
+            averageShares: 0,
+            averageEngagement: 0,
+            lastUpdated: new Date().toISOString(),
+          };
+          break;
+        case "tiktok":
+          mockData[platform] = {
+            platform: "tiktok",
+            totalPosts: 0, // Not available in social analytics
+            totalViews: 0, // Not available in social analytics
+            totalLikes: 0, // Not available in social analytics
+            totalComments: 0, // Not available in social analytics
+            totalShares: 0, // Not available in social analytics
+            totalEngagement: 0, // Not available in social analytics
+            averageViews: 0,
+            averageLikes: 0,
+            averageComments: 0,
+            averageShares: 0,
+            averageEngagement: 0,
+            lastUpdated: new Date().toISOString(),
+          };
+          break;
+        case "youtube":
+          mockData[platform] = {
+            platform: "youtube",
+            totalPosts: 0, // Not available in social analytics
+            totalViews: 0, // Not available in social analytics
+            totalLikes: 0, // Not available in social analytics
+            totalComments: 0, // Not available in social analytics
+            totalShares: 0, // Not available in social analytics
+            totalEngagement: 0, // Not available in social analytics
+            averageViews: 0,
+            averageLikes: 0,
+            averageComments: 0,
+            averageShares: 0,
+            averageEngagement: 0,
+            lastUpdated: new Date().toISOString(),
+          };
+          break;
+        default:
+          mockData[platform] = {
+            platform: platform.toLowerCase(),
+            totalPosts: 0,
+            totalViews: 0,
+            totalLikes: 0,
+            totalComments: 0,
+            totalShares: 0,
+            totalEngagement: 0,
+            averageViews: 0,
+            averageLikes: 0,
+            averageComments: 0,
+            averageShares: 0,
+            averageEngagement: 0,
+            lastUpdated: new Date().toISOString(),
+          };
+      }
+    });
+
+    return mockData;
+  }, [connectedPlatforms]);
+
+  const analyticsData = useMemo(
+    () => getMockAnalyticsData(),
+    [getMockAnalyticsData]
+  );
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Sign In Required</h1>
+          <p className="text-muted-foreground mb-6">
+            Please sign in to view your profiles and analytics.
+          </p>
+          <Button asChild>
+            <Link href="/sign-in">Sign In</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
-      {/* Modern Navigation */}
-      <ProfileNavigation currentPage={currentTab} />
+    <div className="container mx-auto px-4 py-8 space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Social Profiles</h1>
+          <p className="text-muted-foreground">
+            Manage your connected social media accounts and view performance
+            analytics
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/dashboard?tab=analytics">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            View Full Analytics
+          </Link>
+        </Button>
+      </div>
 
-      {/* Main Content Tabs */}
-      <Tabs value={currentTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7 h-auto p-1 bg-muted/50">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <TabsTrigger
-                key={item.key}
-                value={item.key}
-                className="flex flex-col items-center gap-2 py-3 px-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                <Icon className="h-5 w-5" />
-                <span className="text-xs font-medium">{item.label}</span>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
-          <ProfileOverview showActions={true} />
-
-          {/* SSO Section */}
-          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-emerald-900">
-                <LinkIcon className="h-5 w-5" />
-                Single Sign-On (SSO)
-              </CardTitle>
-              <CardDescription className="text-emerald-800">
-                Generate JWT-based SSO URLs to access Ayrshare with your profile
-                credentials. Requires proper private key configuration.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SSOButton showDetails={true} />
-            </CardContent>
-          </Card>
-
-          {/* Quick Stats */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-blue-900">
-                  Total Posts
-                </CardTitle>
-                <BarChart3 className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-900">0</div>
-                <p className="text-xs text-blue-700">This month</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-green-900">
-                  Engagement Rate
-                </CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-900">0%</div>
-                <p className="text-xs text-green-700">
-                  Average across platforms
+      {/* Profile Status */}
+      {profile ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Profile Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">
+                  {profile.title || "Untitled Profile"}
                 </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-purple-900">
-                  Active Accounts
-                </CardTitle>
-                <Users className="h-4 w-4 text-purple-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-purple-900">0</div>
-                <p className="text-xs text-purple-700">Connected platforms</p>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Social Accounts Tab */}
-        <TabsContent value="socials" className="space-y-6">
-          <SocialAccountsOverview showActions={true} />
-        </TabsContent>
-
-        {/* Create Profile Tab */}
-        <TabsContent value="create" className="space-y-6">
-          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-amber-900">
-                <Plus className="h-5 w-5" />
-                Create New Profile
-              </CardTitle>
-              <CardDescription className="text-amber-800">
-                Set up your Ayrshare profile to start managing social media
-                accounts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <NoSSR>
-                <CreateUserProfile />
-              </NoSSR>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Analytics Tab */}
-        <TabsContent value="analytics" className="space-y-6">
-          <ProfileAnalytics showActions={true} />
-        </TabsContent>
-
-        {/* Activity Tab */}
-        <TabsContent value="activity" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Recent Activity
-              </CardTitle>
-              <CardDescription>
-                Track your latest posts and interactions across platforms
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <Activity className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Recent Activity</h3>
-                <p className="text-muted-foreground mb-4">
-                  Start posting to see your activity feed here
+                <p className="text-sm text-muted-foreground">
+                  Profile ID: {profile.refId}
                 </p>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Your First Post
+              </div>
+              <Badge variant="default" className="bg-green-100 text-green-800">
+                Active
+              </Badge>
+            </div>
+
+            <Separator />
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {connectedPlatforms.length}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Connected Platforms
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {profile.monthlyPostCount || 0}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Posts This Month
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">
+                  {profile.monthlyApiCalls || 0}
+                </div>
+                <div className="text-xs text-muted-foreground">API Calls</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">
+                  {profile.monthlyPostQuota || 0}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Monthly Quota
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Quick Actions */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-muted-foreground">
+                Quick Actions
+              </h4>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open("/content?tab=sso", "_self")}
+                  className="flex-1"
+                >
+                  <Key className="h-4 w-4 mr-2" />
+                  Generate SSO
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open("/dashboard", "_self")}
+                  className="flex-1"
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Manage Profile
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-dashed">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Profile Found</h3>
+              <p className="text-muted-foreground mb-4">
+                Create a profile to start managing your social media accounts.
+              </p>
+              <Button asChild>
+                <Link href="/dashboard">Create Profile</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-        {/* Settings Tab */}
-        <TabsContent value="settings" className="space-y-6">
-          <ProfileSettings showActions={true} />
-        </TabsContent>
+      {/* Connected Platforms Analytics */}
+      {connectedPlatforms.length > 0 ? (
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList
+            className="grid w-full"
+            style={{
+              gridTemplateColumns: `repeat(${Math.max(
+                2,
+                connectedPlatforms.length + 1
+              )}, 1fr)`,
+            }}
+          >
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            {connectedPlatforms.map((platform) => (
+              <TabsTrigger key={platform} value={platform}>
+                {platform.charAt(0).toUpperCase() + platform.slice(1)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        {/* Debug Tab */}
-        <TabsContent value="debug" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bug className="h-5 w-5" />
-                Debug Information
-              </CardTitle>
-              <CardDescription>
-                Technical details and debugging tools for troubleshooting
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DebugUserProfile />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="overview" className="space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold mb-4">
+                Platform Analytics Preview
+              </h2>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {connectedPlatforms.map((platform) => {
+                  const data = analyticsData[platform];
+                  if (!data) return null;
+                  return (
+                    <AnalyticsWidget
+                      key={platform}
+                      platform={platform as PlatformType}
+                      data={data}
+                      variant="compact"
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </TabsContent>
+
+          {connectedPlatforms.map((platform) => {
+            const data = analyticsData[platform];
+            if (!data) return null;
+
+            return (
+              <TabsContent
+                key={platform}
+                value={platform}
+                className="space-y-6"
+              >
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">
+                    {platform.charAt(0).toUpperCase() + platform.slice(1)}{" "}
+                    Analytics
+                  </h2>
+                  <AnalyticsWidget
+                    platform={platform as PlatformType}
+                    data={data}
+                    variant="detailed"
+                  />
+                </div>
+              </TabsContent>
+            );
+          })}
+        </Tabs>
+      ) : (
+        <Card className="border-dashed">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                No Social Platforms Connected
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Connect your social media accounts to see analytics and
+                performance data.
+              </p>
+              <Button asChild>
+                <Link href="/profiles">Connect Social Accounts</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

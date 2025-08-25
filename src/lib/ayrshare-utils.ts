@@ -6,16 +6,16 @@ export interface AyrshareUserProfile {
   created?: string;
 }
 
-export interface CreateProfileResponse {
-  key: string;
-  title: string;
-  status: string;
-}
-
 export interface PostResponse {
   id: string;
   status: string;
   message?: string;
+}
+
+export interface CreateProfileResponse {
+  key: string;
+  title: string;
+  status: string;
 }
 
 /**
@@ -94,9 +94,7 @@ export async function getAyrProfile(
   profileKey: string
 ): Promise<AyrshareUserProfile> {
   try {
-    const response = await fetch(
-      `/api/ayrshare/profiles?profileKey=${profileKey}`
-    );
+    const response = await fetch(`/api/ayrshare/user?profileKey=${profileKey}`);
 
     if (!response.ok) {
       let errorData;
@@ -125,7 +123,8 @@ export async function getAyrProfile(
       throw new Error(errorMessage);
     }
 
-    return await response.json();
+    const data: AyrshareUserProfile = await response.json();
+    return data;
   } catch (error) {
     console.error("Error getting Ayrshare profile:", error);
     throw error;
@@ -195,7 +194,7 @@ export function generateSSOUrl(profileKey: string): string {
 }
 
 /**
- * Quick test post using random content
+ * Test posting functionality with a random post
  */
 export async function testRandomPost(
   profileKey: string
@@ -208,41 +207,22 @@ export async function testRandomPost(
       },
       body: JSON.stringify({
         profileKey,
-        randomPost: true,
-        platforms: ["twitter", "facebook", "instagram", "linkedin"],
+        platforms: ["twitter"],
+        text: `Test post from Ayrshare integration - ${new Date().toISOString()}`,
       }),
     });
 
     if (!response.ok) {
-      let errorData;
-      try {
-        errorData = await response.json();
-      } catch {
-        errorData = await response.text();
-      }
-
-      console.error("Test post API error:", errorData);
-
-      // Create a more descriptive error
-      let errorMessage = "Test post failed";
-      if (errorData.details) {
-        errorMessage += `: ${errorData.details}`;
-      } else if (errorData.message) {
-        errorMessage += `: ${errorData.message}`;
-      } else if (errorData.error) {
-        errorMessage += `: ${errorData.error}`;
-      } else if (typeof errorData === "string") {
-        errorMessage += `: ${errorData}`;
-      } else {
-        errorMessage += `: ${JSON.stringify(errorData)}`;
-      }
-
-      throw new Error(errorMessage);
+      const errorData = await response.json();
+      throw new Error(
+        errorData.details || errorData.error || `HTTP ${response.status}`
+      );
     }
 
-    return await response.json();
+    const data: PostResponse = await response.json();
+    return data;
   } catch (error) {
-    console.error("Error with test random post:", error);
+    console.error("Error testing post:", error);
     throw error;
   }
 }

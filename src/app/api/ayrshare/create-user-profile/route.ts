@@ -94,39 +94,33 @@ export async function POST() {
     console.log("🔑 Extracted Profile-Key:", refId);
 
     // Store the Profile-Key in Clerk user metadata
+    let metadataError: Error | null = null;
     try {
       const clerk = await clerkClient();
-      await clerk.users.updateUser(user.id, {
+      await clerk.users.updateUserMetadata(user.id, {
         publicMetadata: {
           "Profile-Key": refId,
-          ayrshare_profile_created: new Date().toISOString(),
         },
       });
-      console.log("✅ Successfully stored Profile-Key in Clerk metadata");
-    } catch (clerkError) {
+      console.log("✅ Profile-Key stored in Clerk metadata:", refId);
+    } catch (error) {
+      metadataError = error instanceof Error ? error : new Error(String(error));
       console.error(
         "❌ Failed to store Profile-Key in Clerk metadata:",
-        clerkError
+        metadataError
       );
-      // Even if Clerk update fails, we still have the profile created
-      // Return success but warn about metadata storage
-      return NextResponse.json({
-        message: "Profile created but failed to store in user metadata",
-        ref_id: refId,
-        warning: "Please contact support to link your profile",
-      });
+      // Continue anyway - the profile was created successfully
     }
 
-    return NextResponse.json(
-      {
-        message: "User profile created successfully",
-        ref_id: refId,
-        profile: profileData,
-      },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      message: "Profile created successfully",
+      ref_id: refId,
+      warning: metadataError
+        ? "Profile created but metadata update failed"
+        : undefined,
+    });
   } catch (error) {
-    console.error("❌ Error creating user profile:", error);
+    console.error("❌ Error creating profile:", error);
     return NextResponse.json(
       {
         error: "Internal server error",

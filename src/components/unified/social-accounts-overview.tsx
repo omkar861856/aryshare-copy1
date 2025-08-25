@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,14 +10,11 @@ import {
 } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
 import {
-  AlertCircle,
-  CheckCircle,
   Facebook,
   Instagram,
   Link,
   Linkedin,
   Plus,
-  RefreshCw,
   Share2,
   Twitter,
   Users,
@@ -32,8 +28,8 @@ interface SocialAccountsOverviewProps {
 
 export function SocialAccountsOverview({
   showActions = true,
-  // compact = false,
-}: SocialAccountsOverviewProps) {
+}: // compact = false,
+SocialAccountsOverviewProps) {
   const { profile, createProfile } = useProfile();
 
   if (!profile) {
@@ -48,7 +44,7 @@ export function SocialAccountsOverview({
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Please create a profile first to view social accounts.
+            Please contact your administrator to set up your profile first.
           </p>
           {showActions && (
             <Button onClick={createProfile} className="mt-4">
@@ -136,94 +132,131 @@ export function SocialAccountsOverview({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Connected Social Accounts
-            </CardTitle>
-            <CardDescription>
-              {socialAccounts.length} account
-              {socialAccounts.length !== 1 ? "s" : ""} connected
-            </CardDescription>
-          </div>
-          {showActions && (
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add More
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {socialAccounts.map((platform) => {
-            const accountDetails = displayNames.find(
-              (d) => d.platform === platform
-            );
-            const isActive = accountDetails?.messagingActive || false;
+    <div className="space-y-6">
+      {/* Header */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Connected Social Accounts
+          </CardTitle>
+          <CardDescription>
+            {socialAccounts.length} platform
+            {socialAccounts.length !== 1 ? "s" : ""} connected
+          </CardDescription>
+        </CardHeader>
+      </Card>
 
-            return (
-              <div
-                key={platform}
-                className="flex items-center justify-between p-3 border rounded-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-3 h-3 rounded-full ${getPlatformColor(
-                      platform
-                    )}`}
-                  />
+      {/* Social Accounts Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {socialAccounts.map((platform) => {
+          const displayName = displayNames.find((d) => d.platform === platform);
+          const isActive = displayName?.messagingActive || false;
+
+          return (
+            <Card
+              key={platform}
+              className={`transition-all hover:shadow-md ${
+                isActive ? "border-green-200" : "border-gray-200"
+              }`}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {getPlatformIcon(platform)}
-                    <span className="font-medium capitalize">{platform}</span>
+                    <div
+                      className={`p-2 rounded-lg ${getPlatformColor(platform)}`}
+                    >
+                      {getPlatformIcon(platform)}
+                    </div>
+                    <div>
+                      <CardTitle className="text-sm capitalize">
+                        {platform}
+                      </CardTitle>
+                      {displayName?.username && (
+                        <CardDescription className="text-xs">
+                          @{displayName.username}
+                        </CardDescription>
+                      )}
+                    </div>
                   </div>
-                  {accountDetails?.username && (
-                    <span className="text-sm text-muted-foreground">
-                      @{accountDetails.username}
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      isActive ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                  />
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Status:</span>
+                    <span
+                      className={isActive ? "text-green-600" : "text-gray-500"}
+                    >
+                      {isActive ? "Active" : "Inactive"}
                     </span>
+                  </div>
+                  {displayName?.type && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Type:</span>
+                      <span className="capitalize">{displayName.type}</span>
+                    </div>
+                  )}
+                  {displayName?.created && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Connected:</span>
+                      <span className="text-xs">
+                        {new Date(displayName.created).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                  {displayName?.refreshDaysRemaining && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">
+                        Auth Expires:
+                      </span>
+                      <span className="text-xs">
+                        {displayName.refreshDaysRemaining} days
+                      </span>
+                    </div>
+                  )}
+                  {displayName?.usedQuota && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Quota Used:</span>
+                      <span className="text-xs">
+                        {displayName.usedQuota}/50 posts
+                      </span>
+                    </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
-                <div className="flex items-center gap-2">
-                  {isActive ? (
-                    <Badge variant="outline" className="text-green-600">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Active
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-amber-600">
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      Inactive
-                    </Badge>
-                  )}
-
-                  {accountDetails?.type && (
-                    <Badge variant="secondary" className="text-xs">
-                      {accountDetails.type}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {showActions && (
-          <div className="flex gap-2 mt-4 pt-4 border-t">
-            <Button variant="outline" className="flex-1">
-              <Link className="h-4 w-4 mr-2" />
-              Manage Connections
-            </Button>
-            <Button variant="outline" className="flex-1">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh Status
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {/* Actions */}
+      {showActions && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">
+              Account Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm">
+                <Link className="h-4 w-4 mr-2" />
+                Connect More Accounts
+              </Button>
+              <Button variant="outline" size="sm">
+                <Users className="h-4 w-4 mr-2" />
+                Manage Accounts
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

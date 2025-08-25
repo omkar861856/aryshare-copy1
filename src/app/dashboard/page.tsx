@@ -1,9 +1,9 @@
 "use client";
 
+import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard";
 import { ConnectSocialsButton } from "@/components/connect-socials-button";
 import { NoSSR } from "@/components/no-ssr";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,35 +18,27 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileOverview } from "@/components/unified/profile-overview";
 import { SocialAccountsOverview } from "@/components/unified/social-accounts-overview";
+import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {
   BarChart3,
-  Calendar,
   ChevronsUpDown,
   Clock,
   Download,
-  Edit,
-  Eye,
-  Facebook,
-  Heart,
-  Instagram,
-  Linkedin,
-  Link as LinkIcon,
+  FileText,
+  Key,
   LogOut,
-  MessageCircle,
-  MoreHorizontal,
+  PieChart,
   Plus,
   Settings,
-  Share2,
-  Trash2,
   TrendingUp,
-  Twitter,
   Upload,
   UserCircle,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const sidebarVariants = {
   open: {
@@ -91,24 +83,6 @@ const staggerVariants = {
     transition: { staggerChildren: 0.03, delayChildren: 0.02 },
   },
 };
-
-interface SocialPost {
-  id: string;
-  platform: "instagram" | "twitter" | "facebook" | "linkedin";
-  content: string;
-  status: "scheduled" | "published" | "draft" | "failed";
-  scheduledTime?: string;
-  publishedTime?: string;
-  engagement?: {
-    likes: number;
-    comments: number;
-    shares: number;
-  };
-  author: {
-    name: string;
-    avatar: string;
-  };
-}
 
 interface DashboardSidebarProps {
   isCollapsed?: boolean;
@@ -204,24 +178,12 @@ function DashboardSidebar({
                         </motion.li>
                       </div>
                     </a>
-                    <a href="/schedule" className="w-full">
+                    <a href="/content" className="w-full">
                       <div className="flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-muted hover:text-primary">
-                        <Calendar className="h-4 w-4" />
+                        <FileText className="h-4 w-4" />
                         <motion.li variants={variants}>
                           {!collapsed && (
-                            <p className="ml-2 text-sm font-medium">Schedule</p>
-                          )}
-                        </motion.li>
-                      </div>
-                    </a>
-                    <a href="/analytics" className="w-full">
-                      <div className="flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-muted hover:text-primary">
-                        <BarChart3 className="h-4 w-4" />
-                        <motion.li variants={variants}>
-                          {!collapsed && (
-                            <p className="ml-2 text-sm font-medium">
-                              Analytics
-                            </p>
+                            <p className="ml-2 text-sm font-medium">Content</p>
                           )}
                         </motion.li>
                       </div>
@@ -237,38 +199,6 @@ function DashboardSidebar({
                       </div>
                     </a>
                     <Separator className="w-full" />
-                    <div className="flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-muted hover:text-primary">
-                      <Instagram className="h-4 w-4" />
-                      <motion.li variants={variants}>
-                        {!collapsed && (
-                          <p className="ml-2 text-sm font-medium">Instagram</p>
-                        )}
-                      </motion.li>
-                    </div>
-                    <div className="flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-muted hover:text-primary">
-                      <Twitter className="h-4 w-4" />
-                      <motion.li variants={variants}>
-                        {!collapsed && (
-                          <p className="ml-2 text-sm font-medium">Twitter</p>
-                        )}
-                      </motion.li>
-                    </div>
-                    <div className="flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-muted hover:text-primary">
-                      <Facebook className="h-4 w-4" />
-                      <motion.li variants={variants}>
-                        {!collapsed && (
-                          <p className="ml-2 text-sm font-medium">Facebook</p>
-                        )}
-                      </motion.li>
-                    </div>
-                    <div className="flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-muted hover:text-primary">
-                      <Linkedin className="h-4 w-4" />
-                      <motion.li variants={variants}>
-                        {!collapsed && (
-                          <p className="ml-2 text-sm font-medium">LinkedIn</p>
-                        )}
-                      </motion.li>
-                    </div>
                   </div>
                 </ScrollArea>
               </div>
@@ -334,124 +264,17 @@ function DashboardSidebar({
   );
 }
 
-function PostCard({ post }: { post: SocialPost }) {
-  const getPlatformIcon = (platform: string) => {
-    switch (platform) {
-      case "instagram":
-        return <Instagram className="h-4 w-4" />;
-      case "twitter":
-        return <Twitter className="h-4 w-4" />;
-      case "facebook":
-        return <Facebook className="h-4 w-4" />;
-      case "linkedin":
-        return <Linkedin className="h-4 w-4" />;
-      default:
-        return <LinkIcon className="h-4 w-4" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "published":
-        return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
-      case "scheduled":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400";
-      case "draft":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
-      case "failed":
-        return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
-    }
-  };
-
-  return (
-    <Card className="w-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {getPlatformIcon(post.platform)}
-            <span className="text-sm font-medium capitalize">
-              {post.platform}
-            </span>
-            <Badge className={cn("text-xs", getStatusColor(post.status))}>
-              {post.status}
-            </Badge>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Eye className="h-4 w-4 mr-2" />
-                View
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground line-clamp-3">
-            {post.content}
-          </p>
-
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            {post.status === "scheduled" && post.scheduledTime && (
-              <span>Scheduled for {post.scheduledTime}</span>
-            )}
-            {post.status === "published" && post.publishedTime && (
-              <span>Published {post.publishedTime}</span>
-            )}
-            {post.status === "draft" && <span>Draft</span>}
-            {post.status === "failed" && <span>Failed to publish</span>}
-          </div>
-
-          {post.engagement && post.status === "published" && (
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Heart className="h-3 w-3" />
-                <span>{post.engagement.likes}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <MessageCircle className="h-3 w-3" />
-                <span>{post.engagement.comments}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Share2 className="h-3 w-3" />
-                <span>{post.engagement.shares}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 function DashboardHeader() {
   return (
     <div className="flex items-center justify-between">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h2 className="text-2xl font-bold tracking-tight">Recent Posts</h2>
         <p className="text-muted-foreground">
-          Manage your social media posts across all platforms
+          Monitor your social media posts and engagement
         </p>
       </div>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm">
+      <div className="flex gap-2">
+        <Button size="sm" variant="outline">
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>
@@ -465,34 +288,40 @@ function DashboardHeader() {
 }
 
 function StatsCards() {
+  const { profile, profileMetadata } = useProfile();
+
   const stats = [
     {
       title: "Total Posts",
-      value: "1,234",
-      change: "+12%",
+      value: profile?.monthlyPostCount?.toString() || "0",
+      change: profile ? "+0%" : "N/A",
       icon: Upload,
       trend: "up",
     },
     {
-      title: "Engagement Rate",
-      value: "3.2%",
-      change: "+0.5%",
+      title: "Monthly Quota",
+      value: profile?.monthlyPostQuota?.toString() || "0",
+      change: profile ? "Available" : "N/A",
       icon: TrendingUp,
       trend: "up",
     },
     {
-      title: "Followers",
-      value: "45.2K",
-      change: "+8%",
+      title: "Connected Accounts",
+      value: profile?.activeSocialAccounts?.length?.toString() || "0",
+      change: profile ? "Platforms" : "N/A",
       icon: Users,
       trend: "up",
     },
     {
-      title: "Scheduled",
-      value: "23",
-      change: "-2",
+      title: "Profile Status",
+      value: profile?.suspended ? "Suspended" : profile ? "Active" : "None",
+      change: profile?.suspended
+        ? "Contact Support"
+        : profile
+        ? "Good"
+        : "Create Profile",
       icon: Clock,
-      trend: "down",
+      trend: profile?.suspended ? "down" : "up",
     },
   ];
 
@@ -523,68 +352,29 @@ function StatsCards() {
 
 function PostsContent() {
   const [activeTab, setActiveTab] = useState("all");
+  const { profile } = useProfile();
 
-  const samplePosts: SocialPost[] = [
-    {
-      id: "1",
-      platform: "instagram",
-      content:
-        "Just launched our new product line! Check out these amazing features that will revolutionize your workflow. #ProductLaunch #Innovation",
-      status: "published",
-      publishedTime: "2 hours ago",
-      engagement: { likes: 128, comments: 32, shares: 24 },
-      author: { name: "John Doe", avatar: "https://github.com/shadcn.png" },
-    },
-    {
-      id: "2",
-      platform: "twitter",
-      content:
-        "Excited to announce our partnership with @company! This collaboration will bring amazing opportunities for our community.",
-      status: "scheduled",
-      scheduledTime: "Tomorrow at 9:00 AM",
-      author: { name: "John Doe", avatar: "https://github.com/shadcn.png" },
-    },
-    {
-      id: "3",
-      platform: "linkedin",
-      content:
-        "Sharing insights from our latest industry report. The future of technology is here, and we're leading the way.",
-      status: "draft",
-      author: { name: "John Doe", avatar: "https://github.com/shadcn.png" },
-    },
-    {
-      id: "4",
-      platform: "facebook",
-      content:
-        "Thank you to everyone who attended our virtual event! The response was overwhelming and we're grateful for the support.",
-      status: "failed",
-      author: { name: "John Doe", avatar: "https://github.com/shadcn.png" },
-    },
-    {
-      id: "5",
-      platform: "twitter",
-      content:
-        "Behind the scenes look at our development process. Our team works tirelessly to bring you the best experience possible.",
-      status: "published",
-      publishedTime: "1 day ago",
-      engagement: { likes: 89, comments: 15, shares: 12 },
-      author: { name: "John Doe", avatar: "https://github.com/shadcn.png" },
-    },
-    {
-      id: "6",
-      platform: "instagram",
-      content:
-        "Weekend vibes at the office! Our team knows how to balance work and fun. #TeamCulture #WorkLifeBalance",
-      status: "scheduled",
-      scheduledTime: "Saturday at 2:00 PM",
-      author: { name: "John Doe", avatar: "https://github.com/shadcn.png" },
-    },
-  ];
+  // Check if there are any posts to display
+  const hasPosts = profile?.monthlyPostCount && profile.monthlyPostCount > 0;
 
-  const filteredPosts =
-    activeTab === "all"
-      ? samplePosts
-      : samplePosts.filter((post) => post.status === activeTab);
+  if (!hasPosts) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Posts Yet</h3>
+          <p className="text-muted-foreground mb-4">
+            Start creating and scheduling your social media posts to see them
+            here.
+          </p>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Your First Post
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -597,10 +387,10 @@ function PostsContent() {
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">
+              Posts will appear here once you start creating content.
+            </p>
           </div>
         </TabsContent>
       </Tabs>
@@ -610,6 +400,27 @@ function PostsContent() {
 
 export default function DashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("overview");
+
+  // Sync URL search params with local state
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && ["overview", "analytics", "posts"].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  // Update URL when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    if (value === "overview") {
+      router.push("/dashboard");
+    } else {
+      router.push(`/dashboard?tab=${value}`);
+    }
+  };
 
   return (
     <div className="flex h-screen w-screen flex-row bg-background">
@@ -624,58 +435,111 @@ export default function DashboardPage() {
         )}
       >
         <div className="flex-1 space-y-6 p-6">
-          <DashboardHeader />
-          <StatsCards />
-
-          {/* Ayrshare Integration */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <NoSSR>
-              <ConnectSocialsButton
-                onProfileCreated={(profileKey) => {
-                  console.log("Profile created:", profileKey);
-                  // Profile key is now automatically stored in Clerk metadata
-                }}
-              />
-            </NoSSR>
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Quick Actions</h3>
-              <div className="space-y-2">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => window.open("/profile", "_self")}
-                >
-                  <UserCircle className="h-4 w-4 mr-2" />
-                  My Profile
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => window.open("/profiles", "_self")}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Profiles
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => window.open("/dashboard", "_self")}
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  View Analytics
-                </Button>
-              </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+              <p className="text-muted-foreground">
+                Welcome to your Ayrshare dashboard. Manage your profiles, social
+                accounts, and content from one central location.
+              </p>
             </div>
           </div>
 
-          {/* Unified Profile Overview */}
-          <div className="space-y-6">
-            <ProfileOverview showActions={true} />
-            <SocialAccountsOverview showActions={true} />
-          </div>
+          {/* Main Dashboard Tabs */}
+          <Tabs
+            value={activeTab}
+            onValueChange={handleTabChange}
+            className="space-y-6"
+          >
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="analytics"
+                className="flex items-center gap-2"
+              >
+                <PieChart className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="posts" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Posts
+              </TabsTrigger>
+            </TabsList>
 
-          <PostsContent />
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-6">
+              <DashboardHeader />
+              <StatsCards />
+
+              {/* Ayrshare Integration */}
+              <div className="grid gap-6 md:grid-cols-2">
+                <NoSSR>
+                  <ConnectSocialsButton
+                    onProfileCreated={(profileKey) => {
+                      console.log("Profile created:", profileKey);
+                    }}
+                  />
+                </NoSSR>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Quick Actions</h3>
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => window.open("/profile", "_self")}
+                    >
+                      <UserCircle className="h-4 w-4 mr-2" />
+                      My Profile
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => window.open("/profiles", "_self")}
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Manage Profiles
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => handleTabChange("analytics")}
+                    >
+                      <PieChart className="h-4 w-4 mr-2" />
+                      View Analytics
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => window.open("/content?tab=sso", "_self")}
+                    >
+                      <Key className="h-4 w-4 mr-2" />
+                      Generate SSO
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Unified Profile Overview */}
+              <div className="space-y-6">
+                <ProfileOverview showActions={true} />
+                <SocialAccountsOverview showActions={true} />
+              </div>
+            </TabsContent>
+
+            {/* Analytics Tab */}
+            <TabsContent value="analytics" className="space-y-6">
+              <AnalyticsDashboard />
+            </TabsContent>
+
+            {/* Posts Tab */}
+            <TabsContent value="posts" className="space-y-6">
+              <PostsContent />
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>

@@ -1,6 +1,7 @@
 import { ClerkProviderWrapper } from "@/components/clerk-provider-wrapper";
-import { TopNavigation } from "@/components/top-navigation";
+import TopNavigation from "@/components/top-navigation";
 import { ProfileProvider } from "@/contexts/profile-context";
+import { ThemeProvider } from "@/contexts/theme-context";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -19,13 +20,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <ClerkProviderWrapper>
-          <ProfileProvider>
-            <TopNavigation />
-            {children}
-          </ProfileProvider>
-        </ClerkProviderWrapper>
+      <body className={inter.className} suppressHydrationWarning={true}>
+        <ThemeProvider>
+          <ClerkProviderWrapper>
+            <ProfileProvider>
+              <TopNavigation />
+              {children}
+            </ProfileProvider>
+          </ClerkProviderWrapper>
+        </ThemeProvider>
       </body>
     </html>
   );

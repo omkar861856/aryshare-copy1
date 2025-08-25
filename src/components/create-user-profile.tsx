@@ -2,15 +2,9 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { AlertCircle, CheckCircle, Loader2, Plus } from "lucide-react";
+import { CheckCircle, Loader2, Plus, UserCircle, XCircle } from "lucide-react";
 import { useState } from "react";
 
 interface CreateUserProfileProps {
@@ -90,27 +84,24 @@ export function CreateUserProfile({
     return (
       <Card className="border-green-200 bg-green-50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-800">
+          <CardTitle className="flex items-center gap-2 text-green-600">
             <CheckCircle className="h-5 w-5" />
             Profile Already Exists
           </CardTitle>
-          <CardDescription className="text-green-700">
-            Your Ayrshare profile is already set up and ready to use.
-          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-green-800">
-                Profile ID:
-              </span>
               <Badge variant="secondary" className="font-mono text-xs">
                 {currentUser.metadata["Profile-Key"]}
               </Badge>
+              <Badge variant="outline" className="text-green-600">
+                Active
+              </Badge>
             </div>
-            <p className="text-sm text-green-700">
-              You can now view your profile details and connect social media
-              accounts.
+            <p className="text-green-700">
+              You already have an Ayrshare profile. You can now connect social
+              media accounts and start posting.
             </p>
           </div>
         </CardContent>
@@ -118,93 +109,70 @@ export function CreateUserProfile({
     );
   }
 
+  // Show create profile form
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Plus className="h-5 w-5" />
+          <UserCircle className="h-5 w-5" />
           Create Ayrshare Profile
         </CardTitle>
-        <CardDescription>
-          Set up your Ayrshare profile to start managing social media accounts
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!result ? (
-          <>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                This will create a new profile in Ayrshare and link it to your
-                account.
-              </p>
-              <div className="text-sm">
-                <strong>Profile will be created for:</strong>{" "}
-                {currentUser?.firstName} {currentUser?.lastName} (
-                {currentUser?.email})
-              </div>
-            </div>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Create your Ayrshare profile to start managing social media
+            accounts. This profile will be linked to your account and used for
+            all future operations.
+          </p>
+          <div className="text-sm text-muted-foreground">
+            <p>• Profile will be created with your name</p>
+            <p>• Automatically linked to your account</p>
+            <p>• Ready for social media connections</p>
+          </div>
+        </div>
 
-            <Button
-              onClick={handleCreateProfile}
-              disabled={isCreating}
-              className="w-full"
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating Profile...
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Profile
-                </>
-              )}
-            </Button>
-          </>
-        ) : (
+        {result && (
           <div
-            className={`space-y-3 ${
-              result.success ? "text-green-700" : "text-red-700"
+            className={`p-3 rounded-lg border ${
+              result.success
+                ? "border-green-200 bg-green-100 text-green-800"
+                : "border-red-200 bg-red-100 text-red-800"
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-1">
               {result.success ? (
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                <CheckCircle className="h-4 w-4" />
               ) : (
-                <AlertCircle className="h-5 w-5 text-red-600" />
+                <XCircle className="h-4 w-4" />
               )}
-              <span className="font-medium">{result.message}</span>
+              <span className="font-medium">
+                {result.success ? "Success" : "Error"}
+              </span>
             </div>
-
-            {result.ref_id && (
-              <div className="bg-gray-100 p-3 rounded">
-                <div className="text-sm font-medium text-gray-800">
-                  Profile ID:
-                </div>
-                <Badge variant="secondary" className="font-mono text-xs mt-1">
-                  {result.ref_id}
-                </Badge>
-              </div>
-            )}
-
+            <p className="text-sm">{result.message}</p>
             {result.warning && (
-              <div className="bg-yellow-100 p-3 rounded text-yellow-800">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <span className="text-sm font-medium">Warning:</span>
-                </div>
-                <p className="text-sm mt-1">{result.warning}</p>
-              </div>
-            )}
-
-            {result.success && (
-              <div className="text-sm text-green-600">
-                Page will refresh automatically to load your new profile...
-              </div>
+              <p className="text-sm text-amber-700 mt-1">⚠️ {result.warning}</p>
             )}
           </div>
         )}
+
+        <Button
+          onClick={handleCreateProfile}
+          disabled={isCreating}
+          className="w-full"
+        >
+          {isCreating ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Plus className="h-4 w-4 mr-2" />
+          )}
+          {isCreating ? "Creating Profile..." : "Create Profile"}
+        </Button>
+
+        <div className="text-xs text-muted-foreground text-center">
+          Profile creation may take a few moments. Please wait...
+        </div>
       </CardContent>
     </Card>
   );

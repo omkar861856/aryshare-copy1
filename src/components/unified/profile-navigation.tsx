@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button";
 import {
   Activity,
-  BarChart3,
   ChevronRight,
+  FileText,
   Home,
   Plus,
   Settings,
@@ -32,8 +32,15 @@ export function ProfileNavigation({
       key: "overview",
       label: "Overview",
       icon: UserCircle,
-      href: "/profiles",
+      href: "/profiles?tab=overview",
       description: "Profile summary and stats",
+    },
+    {
+      key: "content",
+      label: "Content",
+      icon: FileText,
+      href: "/content",
+      description: "Create and analyze content",
     },
     {
       key: "socials",
@@ -48,13 +55,6 @@ export function ProfileNavigation({
       icon: Plus,
       href: "/profiles?tab=create",
       description: "Set up new profiles",
-    },
-    {
-      key: "analytics",
-      label: "Analytics",
-      icon: BarChart3,
-      href: "/profiles?tab=analytics",
-      description: "Performance insights",
     },
     {
       key: "settings",

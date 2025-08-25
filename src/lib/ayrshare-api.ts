@@ -177,12 +177,9 @@ export class AyrshareAPI {
       // For user profiles, we need to use the Profile-Key header
       // The Profile-Key format might be different from refId
       headers["Profile-Key"] = profileKey;
-      console.log("📋 Added Profile-Key header:", profileKey);
     }
 
     const url = new URL(`${this.baseUrl}/user`);
-    console.log("🌐 Making request to:", url.toString());
-
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -191,8 +188,8 @@ export class AyrshareAPI {
       });
     }
 
-    console.log("📤 Request headers:", headers);
-    console.log("🔍 Final URL:", url.toString());
+    console.log("🌐 Making request to:", url.toString());
+    console.log("📋 Headers:", headers);
 
     const response = await fetch(url.toString(), {
       method: "GET",
@@ -227,6 +224,25 @@ export class AyrshareAPI {
     return data;
   }
 
+  async post<T>(endpoint: string, body: Record<string, unknown>): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Ayrshare API error: ${response.status} ${response.statusText}`
+      );
+    }
+
+    return response.json();
+  }
+
   async generateSSOUrl(
     profileKey: string,
     redirectUrl?: string
@@ -245,9 +261,7 @@ export class AyrshareAPI {
       throw new Error("AYR_PRIVATE_KEY_B64 environment variable is not set");
     }
 
-    const defaultRedirect = `${
-      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-    }/sso?profileKey=${profileKey}`;
+    const defaultRedirect = `${process.env.NEXT_PUBLIC_APP_URL}`;
     const finalRedirect = redirectUrl || defaultRedirect;
 
     // Generate JWT using the correct format

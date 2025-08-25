@@ -1,70 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API = "https://api.ayrshare.com/api/post";
-
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const {
-      profileKey,
-      post,
-      platforms = ["twitter", "facebook", "instagram", "linkedin"],
-    } = await req.json();
+    const { post, platforms, mediaUrls, isVideo } = await request.json();
 
-    if (!profileKey) {
-      return NextResponse.json(
-        { error: "Missing profileKey" },
-        { status: 400 }
-      );
-    }
+    const AYR_API_KEY = process.env.AYR_API_KEY;
 
-    const apiKey = process.env.AYR_API_KEY;
-    if (!apiKey) {
-      console.error("AYR_API_KEY environment variable is not set");
+    if (!AYR_API_KEY) {
       return NextResponse.json(
-        {
-          error: "Configuration error: AYR_API_KEY not set",
-          details: "Please check your .env.local file",
-        },
+        { error: "Ayrshare API key not configured" },
         { status: 500 }
       );
     }
 
-    const res = await fetch(API, {
+    const response = await fetch("https://api.ayrshare.com/api/post", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Profile-Key": profileKey, // very important for per-user posting
         "Content-Type": "application/json",
+        Authorization: `Bearer ${AYR_API_KEY}`,
       },
       body: JSON.stringify({
-        post: post ?? "Hello from my app!",
+        post,
         platforms,
-        // for quick tests you can use random content instead of `post`:
-        // randomPost: true
+        mediaUrls,
+        isVideo,
       }),
     });
 
-    const data = await res.json();
+    const responseData = await response.json();
 
-    if (!res.ok) {
-      console.error("Ayrshare post failed:", data);
-      return NextResponse.json(
-        {
-          error: "Post failed",
-          details: data,
-        },
-        { status: res.status }
-      );
-    }
-
-    return NextResponse.json(data, { status: 200 });
+    // Always return the Ayrshare response, regardless of HTTP status
+    // This allows the client to handle success/error cases properly
+    return NextResponse.json(responseData, { status: response.status });
   } catch (error) {
-    console.error("Error in Ayrshare post:", error);
+    console.error("Error posting to Ayrshare:", error);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

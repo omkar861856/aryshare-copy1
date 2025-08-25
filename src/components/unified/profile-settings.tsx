@@ -59,22 +59,26 @@ export function ProfileSettings({ showActions = true }: ProfileSettingsProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            Settings
+            Profile Settings
           </CardTitle>
           <CardDescription>
-            No profile data available for settings
+            Configure your profile preferences and settings
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Please create a profile first to access settings.
+            Please contact your administrator to set up your profile first.
           </p>
         </CardContent>
       </Card>
     );
   }
 
-  const updateSetting = (category: string, key: string, value: string | boolean | number) => {
+  const updateSetting = (
+    category: string,
+    key: string,
+    value: string | boolean | number
+  ) => {
     setSettings((prev) => ({
       ...prev,
       [category]: {
